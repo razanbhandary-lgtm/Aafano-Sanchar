@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Aafano Sanchar - Chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #075E54;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .chat-container {
+            width: 400px;
+            max-width: 100%;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .chat-header {
+            background: #075E54;
+            color: white;
+            padding: 15px 20px;
+            font-size: 20px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-header span {
+            font-size: 24px;
+        }
+        .chat-messages {
+            height: 400px;
+            padding: 15px;
+            overflow-y: auto;
+            background: #ECE5DD;
+        }
+        .message {
+            margin: 8px 0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+        .message.sent {
+            background: #DCF8C6;
+            margin-left: auto;
+            text-align: right;
+        }
+        .message.received {
+            background: white;
+            margin-right: auto;
+        }
+        .chat-input {
+            display: flex;
+            padding: 10px;
+            background: #f0f0f0;
+            gap: 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            outline: none;
+        }
+        .chat-input button {
+            background: #075E54;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .chat-input button:hover {
+            background: #0a7a6b;
+        }
+        .user-count {
+            font-size: 14px;
+            font-weight: normal;
+            background: #128C7E;
+            padding: 2px 12px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>🇳🇵</span> Aafano Sanchar
+            <span class="user-count" id="userCount">🟢 0 online</span>
+        </div>
+        <div class="chat-messages" id="messages"></div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="📝 Aafano message likha...">
+            <button id="sendBtn">➤ Send</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const messagesDiv = document.getElementById('messages');
+        const input = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const userCount = document.getElementById('userCount');
+
+        // Online users count
+        socket.on('user_count', (count) => {
+            userCount.textContent = `🟢 ${count} online`;
+        });
+
+        // Jab message aaye
+        socket.on('chat_message', (data) => {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${data.socketId === socket.id ? 'sent' : 'received'}`;
+            msgDiv.textContent = data.text;
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+
+        // Message bhejna
+        function sendMessage() {
+            const text = input.value.trim();
+            if (text === '') return;
+            
+            const data = {
+                text: text,
+                socketId: socket.id
+            };
+            
+            socket.emit('chat_message', data);
+            input.value = '';
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
