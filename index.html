@@ -1,0 +1,578 @@
+cat > frontend/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🇳🇵 Aafano Sanchar - Complete Chat</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #CC0000, #0033A0);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container, .app-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+        .login-container h1 {
+            color: #CC0000;
+            font-size: 42px;
+            margin-bottom: 10px;
+        }
+        .login-container p {
+            color: #0033A0;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        .login-container input {
+            width: 100%;
+            max-width: 400px;
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            outline: none;
+        }
+        .login-container input:focus {
+            border-color: #0033A0;
+        }
+        .login-container button {
+            padding: 15px 40px;
+            background: #CC0000;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .login-container button:hover {
+            background: #0033A0;
+        }
+        .app-container {
+            display: none;
+            flex-direction: row;
+            padding: 0;
+        }
+        .sidebar {
+            width: 300px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-right: 3px solid #CC0000;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .sidebar .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+        .sidebar .user-profile img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 2px solid #CC0000;
+        }
+        .sidebar .user-profile .info h3 {
+            color: #0033A0;
+            font-size: 16px;
+        }
+        .sidebar .user-profile .info p {
+            color: #666;
+            font-size: 12px;
+        }
+        .sidebar .contacts {
+            flex: 1;
+            overflow-y: auto;
+        }
+        .sidebar .contacts .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .sidebar .contacts .contact-item:hover {
+            background: #e9ecef;
+        }
+        .sidebar .contacts .contact-item img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .sidebar .contacts .contact-item .info {
+            flex: 1;
+        }
+        .sidebar .contacts .contact-item .info h4 {
+            font-size: 14px;
+            color: #333;
+        }
+        .sidebar .contacts .contact-item .info p {
+            font-size: 12px;
+            color: #666;
+        }
+        .sidebar .contacts .contact-item .status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .sidebar .contacts .contact-item .status.online {
+            background: #00ff00;
+        }
+        .sidebar .contacts .contact-item .status.offline {
+            background: #ccc;
+        }
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #ECE5DD;
+        }
+        .chat-header {
+            background: #0033A0;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-header .chat-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .chat-header .chat-user img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+        .chat-header .chat-user h3 {
+            font-size: 16px;
+        }
+        .chat-header .call-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-header .call-buttons button {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .chat-header .call-buttons .voice-call {
+            background: #28a745;
+            color: white;
+        }
+        .chat-header .call-buttons .voice-call:hover {
+            background: #218838;
+        }
+        .chat-header .call-buttons .video-call {
+            background: #dc3545;
+            color: white;
+        }
+        .chat-header .call-buttons .video-call:hover {
+            background: #c82333;
+        }
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            word-wrap: break-word;
+            animation: slideIn 0.3s ease;
+        }
+        .message.sent {
+            background: #DCF8C6;
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .message.received {
+            background: white;
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .message .sender {
+            font-weight: bold;
+            color: #CC0000;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        .message .time {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .message .media {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 10px;
+            margin-top: 5px;
+        }
+        .input-area {
+            background: white;
+            padding: 15px 20px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #ddd;
+        }
+        .input-area input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+        .input-area input:focus {
+            border-color: #0033A0;
+        }
+        .input-area button {
+            padding: 12px 20px;
+            background: #0033A0;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .input-area button:hover {
+            background: #CC0000;
+        }
+        .input-area .file-btn {
+            background: #28a745;
+        }
+        .input-area .file-btn:hover {
+            background: #218838;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden { display: none !important; }
+        .otp-section {
+            margin-top: 15px;
+        }
+        .otp-section input {
+            width: 150px;
+            text-align: center;
+            font-size: 24px;
+            letter-spacing: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- LOGIN SCREEN -->
+    <div class="login-container" id="loginScreen">
+        <h1>🇳🇵 Aafano Sanchar</h1>
+        <p>हाम्रो सम्पर्क - Nepal ko complete chat app</p>
+        <input type="text" id="phoneInput" placeholder="📱 Phone number (e.g., 9812345678)" maxlength="15">
+        <input type="text" id="nameInput" placeholder="👤 Your name" value="Nepali User">
+        <button onclick="sendOTP()">📲 Send OTP</button>
+        <div class="otp-section hidden" id="otpSection">
+            <input type="text" id="otpInput" placeholder="OTP" maxlength="4">
+            <button onclick="verifyOTP()">✅ Verify & Login</button>
+        </div>
+        <div id="otpDisplay" style="margin-top:15px;color:#CC0000;font-weight:bold;"></div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div class="app-container" id="appScreen">
+        <div class="sidebar">
+            <div class="user-profile">
+                <img id="myProfilePic" src="https://via.placeholder.com/50" alt="Profile">
+                <div class="info">
+                    <h3 id="myName">Nepali User</h3>
+                    <p id="myPhone">9812345678</p>
+                </div>
+            </div>
+            <div class="contacts" id="contactsList">
+                <h4 style="color:#0033A0;margin-bottom:10px;">📇 Contacts</h4>
+                <div class="contact-item" onclick="startChat('9812345679')">
+                    <img src="https://via.placeholder.com/40" alt="Contact">
+                    <div class="info">
+                        <h4>Ram Thapa</h4>
+                        <p>🇳🇵 Nepal ma chu</p>
+                    </div>
+                    <div class="status online"></div>
+                </div>
+                <div class="contact-item" onclick="startChat('9812345680')">
+                    <img src="https://via.placeholder.com/40" alt="Contact">
+                    <div class="info">
+                        <h4>Shyam Sharma</h4>
+                        <p>🇳🇵 Kathmandu</p>
+                    </div>
+                    <div class="status offline"></div>
+                </div>
+                <div class="contact-item" onclick="startChat('9812345681')">
+                    <img src="https://via.placeholder.com/40" alt="Contact">
+                    <div class="info">
+                        <h4>Hari Gurung</h4>
+                        <p>🇳🇵 Pokhara</p>
+                    </div>
+                    <div class="status online"></div>
+                </div>
+            </div>
+        </div>
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-user">
+                    <img id="chatUserPic" src="https://via.placeholder.com/40" alt="User">
+                    <div>
+                        <h3 id="chatUserName">Select a contact</h3>
+                        <small id="chatUserStatus">Click a contact to start chatting</small>
+                    </div>
+                </div>
+                <div class="call-buttons">
+                    <button class="voice-call" onclick="startVoiceCall()">📞 Voice</button>
+                    <button class="video-call" onclick="startVideoCall()">📹 Video</button>
+                </div>
+            </div>
+            <div class="messages" id="messages"></div>
+            <div class="input-area">
+                <input type="text" id="messageInput" placeholder="📝 यहाँ लेख्नुहोस्...">
+                <button class="file-btn" onclick="document.getElementById('fileInput').click()">📎</button>
+                <input type="file" id="fileInput" style="display:none" onchange="uploadFile(this)">
+                <button onclick="sendMessage()">➤ पठाउनुहोस्</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentUser = null;
+        let currentChat = null;
+        let currentChatId = null;
+        let otp = null;
+
+        // ============ LOGIN ============
+        function sendOTP() {
+            const phone = document.getElementById('phoneInput').value.trim();
+            if (!phone || phone.length < 10) {
+                alert('Please enter a valid phone number');
+                return;
+            }
+            
+            fetch('/api/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone })
+            })
+            .then(res => res.json())
+            .then(data => {
+                otp = data.otp;
+                document.getElementById('otpDisplay').textContent = `✅ OTP sent: ${otp} (for demo)`;
+                document.getElementById('otpSection').classList.remove('hidden');
+            });
+        }
+
+        function verifyOTP() {
+            const enteredOtp = document.getElementById('otpInput').value.trim();
+            if (enteredOtp !== String(otp)) {
+                alert('❌ Invalid OTP!');
+                return;
+            }
+            
+            const phone = document.getElementById('phoneInput').value.trim();
+            const name = document.getElementById('nameInput').value.trim() || 'Nepali User';
+            
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, name })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    currentUser = data.user;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('appScreen').style.display = 'flex';
+                    document.getElementById('myName').textContent = currentUser.name;
+                    document.getElementById('myPhone').textContent = currentUser.phone;
+                    connectSocket();
+                }
+            });
+        }
+
+        // ============ SOCKET ============
+        function connectSocket() {
+            socket = io({
+                auth: { phone: currentUser.phone, name: currentUser.name }
+            });
+
+            socket.on('connect', () => {
+                console.log('✅ Connected to server');
+            });
+
+            socket.on('receive_message', (message) => {
+                if (currentChatId === message.chatId) {
+                    displayMessage(message);
+                }
+            });
+
+            socket.on('load_messages', (messages) => {
+                messages.forEach(msg => displayMessage(msg));
+            });
+
+            socket.on('user_status', (data) => {
+                // Update contact status in sidebar
+            });
+
+            socket.on('incoming_voice_call', (data) => {
+                if (confirm(`📞 ${data.name} (${data.from}) is calling you. Accept?`)) {
+                    startVoiceCall(data.from);
+                }
+            });
+
+            socket.on('incoming_video_call', (data) => {
+                if (confirm(`📹 ${data.name} (${data.from}) is video calling you. Accept?`)) {
+                    startVideoCall(data.from);
+                }
+            });
+        }
+
+        // ============ CHAT ============
+        function startChat(phone) {
+            currentChat = phone;
+            currentChatId = `chat_${[currentUser.phone, phone].sort().join('_')}`;
+            
+            document.getElementById('chatUserName').textContent = phone;
+            document.getElementById('chatUserStatus').textContent = 'Online';
+            document.getElementById('messages').innerHTML = '';
+            
+            socket.emit('join_chat', currentChatId);
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if (!text || !currentChatId) return;
+            
+            socket.emit('send_message', {
+                chatId: currentChatId,
+                text: text
+            });
+            
+            input.value = '';
+        }
+
+        function displayMessage(message) {
+            const messagesDiv = document.getElementById('messages');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${message.sender._id === currentUser._id ? 'sent' : 'received'}`;
+            
+            let mediaHtml = '';
+            if (message.mediaUrl) {
+                if (message.mediaType === 'image') {
+                    mediaHtml = `<img src="${message.mediaUrl}" class="media" alt="Image">`;
+                } else if (message.mediaType === 'video') {
+                    mediaHtml = `<video src="${message.mediaUrl}" class="media" controls></video>`;
+                } else if (message.mediaType === 'audio') {
+                    mediaHtml = `<audio src="${message.mediaUrl}" controls></audio>`;
+                } else {
+                    mediaHtml = `<a href="${message.mediaUrl}" target="_blank">📄 ${message.fileName || 'Document'}</a>`;
+                }
+            }
+            
+            msgDiv.innerHTML = `
+                <div class="sender">${message.sender.name}</div>
+                <div>${message.text}</div>
+                ${mediaHtml}
+                <div class="time">${new Date(message.timestamp).toLocaleTimeString()}</div>
+            `;
+            
+            messagesDiv.appendChild(msgDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        // ============ FILE UPLOAD ============
+        function uploadFile(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    socket.emit('send_message', {
+                        chatId: currentChatId,
+                        text: '',
+                        mediaUrl: data.url,
+                        mediaType: data.type,
+                        fileName: data.name,
+                        fileSize: data.size
+                    });
+                }
+            });
+        }
+
+        // ============ VOICE/VIDEO CALL ============
+        function startVoiceCall(phone) {
+            const target = phone || currentChat;
+            if (!target) return alert('Select a contact first');
+            
+            socket.emit('voice_call', {
+                targetPhone: target,
+                chatId: currentChatId
+            });
+            alert(`📞 Calling ${target}...`);
+        }
+
+        function startVideoCall(phone) {
+            const target = phone || currentChat;
+            if (!target) return alert('Select a contact first');
+            
+            socket.emit('video_call', {
+                targetPhone: target,
+                chatId: currentChatId
+            });
+            alert(`📹 Video calling ${target}...`);
+        }
+
+        // Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+    </script>
+</body>
+</html>
+EOF
